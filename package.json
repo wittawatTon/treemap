@@ -1,5 +1,5 @@
 {
-  "name": "choropleth",
+  "name": "treemap",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

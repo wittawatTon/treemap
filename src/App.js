@@ -1,140 +1,33 @@
-import React, { useEffect } from 'react';
-import * as d3 from 'd3';
-import * as topojson from 'topojson-client';
+import React, { useState } from 'react';
+import TreeMap from './TreeMap.js';
 import './App.css';
 
-const App = () => {
-  useEffect(() => {
-    const url1 = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/counties.json';
-    const url2 = 'https://cdn.freecodecamp.org/testable-projects-fcc/data/choropleth_map/for_user_education.json';
+function App() {
+  const [dataUrl, setDataUrl] = useState('https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json');
+  const [title, setTitle] = useState('Movie Sales');
+  const [description, setDescription] = useState('Top 100 Highest Grossing Movies Grouped By Genre');
 
-    d3.select('.visHolder').selectAll('*').remove();
-
-    Promise.all([d3.json(url1), d3.json(url2)])
-      .then(([countiesData, educationData]) => {
-        if (!countiesData || !educationData) {
-          console.error('No data found');
-          return;
-        }
-
-        //console.log("Education Data:" + JSON.stringify(educationData));
-        const width = 960;
-        const height = 600;
-        const legendWidth = 300;
-        const legendHeight = 20;
-        const legendPadding = 440;
-        const colorScale = d3.scaleQuantize()
-          .domain([0, 100]) // Adjust based on your education data range
-          .range(d3.schemeBlues[9]);
-
-        // Create SVG container
-        const svg = d3.select('.visHolder')
-          .append('svg')
-          .attr('width', width)
-          .attr('height', height);
-
-        // Create tooltip
-        const tooltip = d3.select('.visHolder')
-          .append('div')
-          .attr('id', 'tooltip')
-          .style('position', 'absolute')
-          .style('opacity', 0)
-          .style('background-color', 'white')
-          .style('border', '1px solid #ccc')
-          .style('padding', '5px');
-
-        // Convert TopoJSON to GeoJSON
-        const counties = topojson.feature(countiesData, countiesData.objects.counties);
-        //console.log("Counties Data:" + JSON.stringify(educationData));
-
-        // Add data-education and data-fips attributes to counties
-        const educationByFips = {};
-        educationData.forEach(d => {
-          educationByFips[d.fips] = d;
-        });
-
-        // Render counties with education data
-        svg.selectAll('path')
-          .data(counties.features)
-          .enter()
-          .append('path')
-          .attr('d', d3.geoPath()) // No projection applied
-          .attr('class', 'county')
-          .attr('data-fips', d => d.id)
-          .attr('data-education', d => {
-            const education = educationByFips[d.id];
-            return education ? education.bachelorsOrHigher : 0;
-          })
-          .style('fill', d => {
-            const education = educationByFips[d.id];
-            return education ? colorScale(education.bachelorsOrHigher) : '#ccc';
-          })
-          .style('stroke', '#fff')
-          .style('stroke-width', '0.5px')
-          .on('mouseover', function(event, d) {
-            const education = educationByFips[d.id];
-            tooltip.transition().duration(200).style('opacity', 0.9);
-            tooltip.html(
-              `County: ${education ? education.area_name : 'Unknown'}<br>
-              State: ${education ? education.state : 'Unknown'}<br>
-              % with Bachelor's or Higher: ${education ? education.bachelorsOrHigher : 'N/A'}`
-            )
-            .attr('data-education', education ? education.bachelorsOrHigher : 0)
-            .style('left', (event.pageX + 5) + 'px')
-            .style('top', (event.pageY - 28) + 'px');
-            d3.select(this).style('fill', 'orange');
-          })
-          .on('mouseout', function() {
-            tooltip.transition().duration(300).style('opacity', 0);
-            d3.select(this).style('fill', d => {
-              const education = educationByFips[d.id];
-              return education ? colorScale(education.bachelorsOrHigher) : '#ccc';
-            });
-          });
-
-          
-        // Add legend
-        const legend = svg.append('g')
-          .attr('id', 'legend')
-          .attr('transform', `translate(${legendPadding},${legendHeight})`);
-
-        const legendScale = d3.scaleLinear()
-          .domain([0, 100]) // Adjust based on your education data range
-          .range([0, legendWidth]);
-
-        const legendAxis = d3.axisBottom()
-          .scale(legendScale)
-          .ticks(8)
-          .tickSize(10)
-          .tickFormat(d => `${d}%`);
-
-        legend.selectAll('rect')
-          .data(colorScale.range().map(d => colorScale.invertExtent(d)))
-          .enter()
-          .append('rect')
-          .attr('x', d => legendScale(d[0]))
-          .attr('y', 0)
-          .attr('width', d => legendScale(d[1]) - legendScale(d[0]))
-          .attr('height', legendHeight)
-          .style('fill', d => colorScale(d[0]));
-
-        legend.append('g')
-          .attr('transform', `translate(0,${legendHeight})`)
-          .call(legendAxis);
-
-      })
-      .catch(e => console.log('Error loading data:', e));
-  }, []);
+  const handleLinkClick = (url, title, description) => {
+    setDataUrl(url);
+    setTitle(title);
+    setDescription(description);
+  };
 
   return (
     <div className="App">
-      <div className="container">
-        <div id="title">United States Educational Attainment</div>
-        <div id="description">Percentage of adults age 25 and older with a bachelor's degree or higher (2010-2014)</div>
-        <div className="visHolder"></div>
-      </div>
+      <nav className="navbar">
+        <ul>
+          <li><button onClick={() => handleLinkClick('https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/kickstarter-funding-data.json', 'Kickstarter Pledges', 'Top 100 Most Pledged Kickstarter Campaigns Grouped By Category')}>Kickstarter Pledges</button></li>
+          <li><button onClick={() => handleLinkClick('https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json', 'Movie Sales', 'Top 100 Highest Grossing Movies Grouped By Genre')}>Movie Sales</button></li>
+          <li><button onClick={() => handleLinkClick('https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/video-game-sales-data.json', 'Video Game Sales', 'Top 100 Most Sold Video Games Grouped by Platform')}>Video Game Sales</button></li>
+        </ul>
+      </nav>
+      <div id="title">{title}</div>
+      <div id="description">{description}</div>
+      <TreeMap dataUrl={dataUrl} />
+      <div id="tooltip" style={{ position: 'absolute', opacity: 0 }}></div>
     </div>
   );
-};
+}
 
 export default App;
